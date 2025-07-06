@@ -1,8 +1,8 @@
 """Contains functions for plotting the airfoil data."""
 
 import matplotlib.pyplot as plt
-from matplotlib.widgets import RadioButtons, Slider
-from airfoil import twist_airfoil_ledge, twist_airfoil_centroid, scale_airfoil
+from matplotlib.widgets import RadioButtons, Slider, TextBox
+from airfoil import *
 
 class Plotting():
     def __init__(self, df, task_list) -> None:
@@ -22,13 +22,23 @@ class Plotting():
         self.angle_slider = Slider(ax=self.ax_angle, label='Angle Twist', valmin=-180, valmax=180, valinit=0, orientation='vertical')
         self.angle_slider.set_active(True)
         
-        self.ax_scale = plt.axes([0.85, 0.2, 0.03, 0.6])
+        self.ax_scale = plt.axes([0.90, 0.2, 0.03, 0.6])
         self.scale_slider = Slider(ax=self.ax_scale, label='Scale Factor', valmin=0.1, valmax=2.0, valinit=0, orientation='vertical')
         self.scale_slider.set_active(False)
 
         # Update plot when sliders are changed
         self.angle_slider.on_changed(func=lambda _: self.update_plot(task=radio.value_selected))
         self.scale_slider.on_changed(func=lambda _: self.update_plot(task=radio.value_selected))
+
+        # Add text boxes for X and Y coordinates
+        self.ax_x = plt.axes([0.85, 0.1, 0.1, 0.03])
+        self.ax_y = plt.axes([0.85, 0.05, 0.1, 0.03])
+        self.x_textbox = TextBox(self.ax_x, 'X:', initial='0')
+        self.y_textbox = TextBox(self.ax_y, 'Y:', initial='0')
+        self.x_textbox.on_submit(lambda _: self.update_plot(task=radio.value_selected))
+        self.y_textbox.on_submit(lambda _: self.update_plot(task=radio.value_selected))
+        self.ax_x.set_visible(False)
+        self.ax_y.set_visible(False)
 
         # Show initial plot (Task 1 by default)
         self.update_plot(task=self.task_list[0])
@@ -83,7 +93,7 @@ class Plotting():
             scale_factor: Factor to scale the airfoil by
         """
         plt.sca(self.ax)  # Set the main axes as current
-        plt.cla()       # Clear the main axes only
+        plt.cla()            # Clear the main axes only
         
         # Apply scale
         result_df = scale_airfoil(df, scale_factor)
@@ -103,6 +113,28 @@ class Plotting():
         plt.axis('equal')
         plt.legend()
 
+    def plot_translated_airfoil(self, df, centroid_x, centroid_y):
+        """
+        Plot the original and translated airfoil.
+        
+        Args:
+            df: pandas DataFrame with X and Y coordinates
+            centroid_x: X coordinate of the translation
+            centroid_y: Y coordinate of the translation
+        """
+        plt.sca(self.ax)  # Set the main axes as current
+        plt.cla()            # Clear the main axes only
+
+        # Apply translation
+        result_df_translated = translate_airfoil(df=df, x_center=centroid_x, y_center=centroid_y)
+        result_df_twisted = twist_airfoil_centroid(df=result_df_translated[['X_translated', 'Y_translated']], angle_degrees=self.angle_slider.val)
+        result_df_scale = scale_airfoil(df=result_df_twisted[['X_twisted', 'Y_twisted']], scale_factor=self.scale_slider.val)
+
+        plt.plot(result_df_translated['X'], result_df_translated['Y'], 'b-', linewidth=2, label='Original')
+        plt.plot(result_df_translated['X_translated'], result_df_translated['Y_translated'], 'r--', linewidth=2)
+        plt.plot(result_df_twisted['X_twisted'], result_df_twisted['Y_twisted'], 'g-.', linewidth=2)
+        plt.plot(result_df_scale['X_scaled'], result_df_scale['Y_scaled'], 'm:', linewidth=2)
+
     def update_plot(self, task) -> None:
         plt.sca(self.ax)
         plt.cla()
@@ -111,17 +143,31 @@ class Plotting():
             self.angle_slider.set_active(True)
             self.ax_scale.set_visible(False)
             self.scale_slider.set_active(False)
+            self.ax_x.set_visible(False)
+            self.ax_y.set_visible(False)
             self.plot_twisted_airfoil(df=self.df, angle_degrees=self.angle_slider.val, ledge=True, centroid=False)
         elif task == 'Task 2: Scale':
             self.ax_angle.set_visible(False)
             self.angle_slider.set_active(False)
             self.ax_scale.set_visible(True)
             self.scale_slider.set_active(True)
+            self.ax_x.set_visible(False)
+            self.ax_y.set_visible(False)
             self.plot_scale_airfoil(df=self.df, scale_factor=self.scale_slider.val)
-        else:
+        elif task == 'Task 3: Twist by Centroid':
             self.ax_angle.set_visible(True)
             self.angle_slider.set_active(True)
             self.ax_scale.set_visible(False)
             self.scale_slider.set_active(False)
+            self.ax_x.set_visible(False)
+            self.ax_y.set_visible(False)
             self.plot_twisted_airfoil(df=self.df, angle_degrees=self.angle_slider.val, ledge=False, centroid=True)
+        else:
+            self.ax_angle.set_visible(True)
+            self.angle_slider.set_active(True)
+            self.ax_scale.set_visible(True)
+            self.scale_slider.set_active(True)
+            self.ax_x.set_visible(True)
+            self.ax_y.set_visible(True)
+            self.plot_translated_airfoil(df=self.df, centroid_x=float(self.x_textbox.text), centroid_y=float(self.y_textbox.text))
         plt.draw()

@@ -27,7 +27,9 @@ def twist_airfoil_ledge(df, angle_degrees):
     ])
     
     # Apply rotation to each point of data set. Center of leading edge (0,0) is the rotation center.
-    coords = np.column_stack((result_df['X'], result_df['Y']))
+    res_x = result_df.iloc[:, 0]  # Access X column
+    res_y = result_df.iloc[:, 1]  # Access Y column
+    coords = np.column_stack((res_x, res_y))
     rotated_coords = np.dot(coords, rotation_matrix.T)
     
     # Store the results
@@ -51,8 +53,10 @@ def twist_airfoil_centroid(df, angle_degrees):
     result_df = df.copy()
 
     # Calculate centroid
-    centroid_x = result_df['X'].mean()
-    centroid_y = result_df['Y'].mean()
+    res_x = result_df.iloc[:, 0]  # Access X column
+    res_y = result_df.iloc[:, 1]  # Access Y column
+    centroid_x = res_x.mean()        
+    centroid_y = res_y.mean()        
 
     # Convert angle to radians
     angle_rad = radians(angle_degrees)
@@ -64,7 +68,7 @@ def twist_airfoil_centroid(df, angle_degrees):
     ])
     
     # Apply rotation to each point of data set. Centroid is the rotation center.
-    coords = np.column_stack((result_df['X']-centroid_x, result_df['Y']-centroid_y))
+    coords = np.column_stack((res_x-centroid_x, res_y-centroid_y))
     rotated_coords = np.dot(coords, rotation_matrix.T)
     
     # Store the results
@@ -88,11 +92,39 @@ def scale_airfoil(df, scale_factor):
     result_df = df.copy()
     
     # Calculate centroid
-    centroid_x = result_df['X'].mean()
-    centroid_y = result_df['Y'].mean()
+    res_x = result_df.iloc[:, 0]  # Access X column
+    res_y = result_df.iloc[:, 1]  # Access Y column
+    centroid_x = res_x.mean()
+    centroid_y = res_y.mean()
 
     # Scale the plot
-    result_df['X_scaled'] = centroid_x + (result_df['X'] - centroid_x) * scale_factor
-    result_df['Y_scaled'] = centroid_y + (result_df['Y'] - centroid_y) * scale_factor
+    result_df['X_scaled'] = centroid_x + (res_x - centroid_x) * scale_factor
+    result_df['Y_scaled'] = centroid_y + (res_y - centroid_y) * scale_factor
     
+    return result_df
+
+def translate_airfoil(df, x_center, y_center):
+    """
+    Translate the points in space as per the new center of aerofoil defined by the user.
+    
+    Args:
+        df: pandas DataFrame with X and Y coordinates
+        x_center: New X coordinate for the center
+        y_center: New Y coordinate for the center
+
+    Returns:
+        DataFrame with translated coordinates
+    """
+
+    # Make a copy of the dataframe to avoid modifying the original
+    result_df = df.copy()
+
+    # Calculate current centroid by taking average of extreme points
+    current_centroid_x = (max(result_df['X']) + min(result_df['X'])) / 2
+    current_centroid_y = (max(result_df['Y']) + min(result_df['Y'])) / 2
+    
+    # Translate the points using the difference between the new center and current centroid
+    result_df['X_translated'] = result_df['X'] + (x_center - current_centroid_x)
+    result_df['Y_translated'] = result_df['Y'] + (y_center - current_centroid_y)
+
     return result_df
