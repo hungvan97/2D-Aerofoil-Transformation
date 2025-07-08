@@ -3,7 +3,7 @@
 import numpy as np
 from math import radians, cos, sin
 
-def twist_airfoil_ledge(df, angle_degrees):
+async def twist_airfoil_ledge(df, angle_degrees):
     """
     Twist the airfoil about its leading edge by the specified angle in degrees.
     
@@ -38,7 +38,7 @@ def twist_airfoil_ledge(df, angle_degrees):
     
     return result_df
 
-def twist_airfoil_centroid(df, angle_degrees):
+async def twist_airfoil_centroid(df, angle_degrees):
     """
     Twist the airfoil about its centroid by the specified angle in degrees.
     
@@ -77,7 +77,7 @@ def twist_airfoil_centroid(df, angle_degrees):
     
     return result_df
 
-def scale_airfoil(df, scale_factor):
+async def scale_airfoil(df, scale_factor):
     """
     Scale the airfoil by a factor.
     
@@ -103,7 +103,7 @@ def scale_airfoil(df, scale_factor):
     
     return result_df
 
-def translate_airfoil(df, x_center, y_center):
+async def translate_airfoil(df, x_center, y_center):
     """
     Translate the points in space as per the new center of aerofoil defined by the user.
     
